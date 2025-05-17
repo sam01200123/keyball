@@ -51,6 +51,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                   RESET    , KBC_RST  , _______  ,        _______  , _______  ,                   _______  , _______  , _______       , KBC_RST  , RESET
   ),
 };
+
 // clang-format on
 
 layer_state_t layer_state_set_user(layer_state_t state) {
@@ -68,3 +69,63 @@ void oledkit_render_info_user(void) {
     keyball_oled_render_ballinfo();
 }
 #endif
+
+#define MOUSE_LAYER 2
+#define AML_ACTIVATE_THRESHOLD 5
+#define AUTO_MOUSE_LAYER_KEEP_TIME 30000  // 30秒
+
+static bool mouse_layer_active = false;
+static uint16_t mouse_click_timer = 0;
+static bool mouse_click_detected = false;
+static uint16_t last_mouse_activity_timer = 0;
+
+report_mouse_t last_report = {0};
+
+void pointing_device_task_user(report_mouse_t *mouse_report) {
+    int16_t dx = mouse_report->x - last_report.x;
+    int16_t dy = mouse_report->y - last_report.y;
+
+    if (abs(dx) >= AML_ACTIVATE_THRESHOLD || abs(dy) >= AML_ACTIVATE_THRESHOLD) {
+        if (!mouse_layer_active) {
+            layer_on(MOUSE_LAYER);
+            mouse_layer_active = true;
+        }
+        // 動かした時にタイマーリセット
+        last_mouse_activity_timer = timer_read();
+    }
+
+    last_report = *mouse_report;
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case KC_MS_BTN1:
+        case KC_MS_BTN2:
+        case KC_MS_BTN3:
+            if (record->event.pressed) {
+                mouse_click_detected = true;
+                mouse_click_timer = timer_read();
+            }
+            break;
+    }
+    return true;
+}
+
+void matrix_scan_user(void) {
+    // クリック後500msでマウスレイヤーOFF
+    if (mouse_click_detected) {
+        if (timer_elapsed(mouse_click_timer) > 500) {
+            layer_off(MOUSE_LAYER);
+            mouse_layer_active = false;
+            mouse_click_detected = false;
+        }
+    }
+
+    // タイムアウトでマウスレイヤーOFF（30秒経過時）
+    if (mouse_layer_active && !mouse_click_detected) {
+        if (timer_elapsed(last_mouse_activity_timer) > AUTO_MOUSE_LAYER_KEEP_TIME) {
+            layer_off(MOUSE_LAYER);
+            mouse_layer_active = false;
+        }
+    }
+}
