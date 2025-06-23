@@ -50,7 +50,7 @@ jobs:
     - name: List assets
       run: ls -l *.hex
     - name: Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v4
       with:
         draft: true
         prerelease: ${{ contains(github.ref_name, '-alpha.') || contains(github.ref_name, '-beta.') }}
