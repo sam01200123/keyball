@@ -19,7 +19,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Setup QMK firmware
-      uses: ./.github/actions/setup-qmk
+      uses: qmk/setup-qmk@v1
 
     - name: Install a link to own source
       run: ln -s $(pwd)/qmk_firmware/keyboards/keyball __qmk__/keyboards/keyball
