@@ -46,4 +46,4 @@ Keyball46 provides some keymaps as default:
     ```console
     $ make keyball/rev1/ball:via
     $ make keyball/rev1/noball:via
-    ```
+    ```　　
