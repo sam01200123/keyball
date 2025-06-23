@@ -2,27 +2,34 @@ name: Build Keyball44 Custom Firmware
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+
+    # QMK 公式コンテナを利用
+    container: ghcr.io/qmk/qmk_cli:latest
+
     steps:
-      - name: Checkout source
+      # 1. リポジトリを取得
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup QMK
-        uses: qmk/setup-qmk@v1
+      # 2. （必要に応じて）userspace や keymap を QMK ツリーへコピー
+      - name: Copy userspace / custom keymap
+        run: |
+          mkdir -p /qmk_firmware/keyboards/keyball/keyball44/keymaps/sam_custom
+          cp -r keyboards/keyball/keyball44/keymaps/sam_custom/* \
+                /qmk_firmware/keyboards/keyball/keyball44/keymaps/sam_custom/
 
-      - name: Install required python dependencies
-        run: python3 -m pip install -r __qmk__/requirements.txt
-
-      - name: Compile
+      # 3. ビルド
+      - name: Compile firmware
         run: qmk compile -kb keyball/keyball44 -km sam_custom
 
+      # 4. 成果物をアップロード
       - name: Archive firmware
         uses: actions/upload-artifact@v4
         with:
